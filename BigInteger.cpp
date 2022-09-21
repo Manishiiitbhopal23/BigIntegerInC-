@@ -1,206 +1,356 @@
-#include <iostream>
-#include <cstdio>
-#include <cstring>
-#include <algorithm>
+#include <bits/stdc++.h>
 using namespace std;
+class BigInt{
 
-class Bigint {
-
-    const static int MAX = 100005;
-    char x[MAX];
-    int length;
-
-    void align(char *X, int numDigits) {
-        int length = strlen(X);
-        for (int i = length; i < numDigits; i++) X[i]='0';
-        X[numDigits]='\0';
-    }
-
-    int add(char *X, int lenX, char *Y, int lenY, int carry, char *Z) {
-        int maxLen = max(lenX, lenY);
-        align(X, maxLen); align(Y, maxLen);
-        for (int i = 0; i < maxLen; i++) {
-            int num = (X[i]-'0') + (Y[i]-'0') + carry;
-            Z[i] = num%10 + '0';
-            carry = num / 10;
-        }
-        if (carry) Z[maxLen++] = carry+'0';
-        Z[maxLen] = '\0';
-
-        //Put everything back to original state
-        X[lenX]='\0'; Y[lenY]='\0';
-
-        return maxLen;
-    }
-
-    int substract(char *X, int lenX, char *Y, int lenY, char *Z){
-        int maxLen = max(lenX, lenY);
-        align(X, maxLen); align(Y, maxLen);
-        for (int i = 0; i < maxLen; i++) Y[i]=('9'-Y[i])+'0';
-        int len = add(X, lenX, Y, maxLen, 1, Z);
-        Z[len--] = '\0';
-
-        //Put everything back to original state
-        for (int i = 0; i < maxLen; i++) Y[i]=('9'-Y[i])+'0';
-        X[lenX]='\0'; Y[lenY]='\0';
-
-        return len;
-    }
-
-    int multiply(char *X, int lenX, char *Y, int lenY, char *Z) {
-        if (lenX < lenY) {
-            swap(X, Y); swap(lenX, lenY);
-        }
-        char result[MAX];
-        int lenZ = 0;
-        for (int i = 0; Y[i]; i++) {
-            int digit = Y[i]-'0';
-            int carry = 0, size = 0;
-            for (int j = 0; X[j]; j++) {
-                int val = ((X[j]-'0')*digit) + carry;
-                carry = val/10;
-                val %= 10;
-                result[size++] = val+'0';
-            }
-            if (carry) result[size++] = carry + '0';
-            result[size]='\0';
-
-            for (int j = size; j >= 0; j--) result[j+i] = result[j];
-            for (int j = 0; j < i; j++) result[j]='0';
-
-            char finalResult[MAX];
-            lenZ = add(result, size+i, Z, lenZ, 0, finalResult);
-            strcpy(Z, finalResult);
-        }
-        return lenZ;
-    }
-
-
-    // Relational Operations
-    bool equals(char *X, int lenX, char *Y, int lenY) {
-        int maxLen = max(lenX, lenY);
-        align(X, maxLen); align(Y, maxLen);
-        for (int i = maxLen; i >= 0; i--) {
-            if (X[i] != Y[i]) return false;
-        }
-
-        //Put everything back to original state
-        X[lenX] = '\0'; Y[lenY] = '\0';
-
-        return true;
-    }
-
-    bool greater(char *X, int lenX, char *Y, int lenY) {
-        int maxLen = max(lenX, lenY);
-        align(X, maxLen); align(Y, maxLen);
-        for (int i = maxLen - 1; i >= 0; i--) {
-            if (X[i] > Y[i]) return true;
-            if (X[i] < Y[i]) return false;
-        }
-
-        //Put everything back to original state
-        X[lenX] = '\0'; Y[lenY] = '\0';
-
-        return false;
-    }
-
+ string digits;
 public:
-    //Constructors
-    Bigint() {
-        x[0]='0'; x[1]='\0';
-        length=1;
-    }
 
-    Bigint(string s) {
-        length = s.size();
-        for (int i=0, j=length-1; i < s.size(); i++, j--) x[j]=s[i];
-        x[length]='\0';
-    }
+ //Constructors:
+ BigInt(unsigned long long n = 0);
+ BigInt(string &);
+ BigInt(const char *);
+ BigInt(BigInt &);
 
-    Bigint(int v) {
-        int size = 0;
-        while (v) {
-            x[size++] = v % 10 + '0';
-            v /= 10;
-        }
-        x[size]='\0';
-        length = size;
-    }
+ //Helper Functions:
 
-    //Arithmetic Operations
-    Bigint operator +(Bigint &b) {
-        Bigint r;
-        r.length = add(this->x, this->length, b.x, b.length, 0, r.x);
-        return r;
-    }
+ friend bool Null(const BigInt &);
+ friend int Length(const BigInt &);
+ int operator[](const int)const;
 
-    Bigint operator *(Bigint &b) {
-        Bigint r;
-        r.length = multiply(this->x, this->length, b.x, b.length, r.x);
-        return r;
-    }
+   /*-----Operator Overloading-----*/
 
-    Bigint operator -(Bigint &b) {
-        Bigint r;
-        r.length = substract(this->x, this->length, b.x, b.length, r.x);
-        return r;
-    }
+ //Direct assignment
+ BigInt &operator=(const BigInt &);
 
-    // Relational Operators
-    bool operator ==(Bigint &b) {
-        return equals(this->x, this->length, b.x, b.length);
-    }
+ //Post/Pre - Incrementation
+ BigInt &operator++();
+ BigInt operator++(int temp);
+ BigInt &operator--();
+ BigInt operator--(int temp);
 
-    bool operator >(Bigint &b) {
-        return greater(this->x, this->length, b.x, b.length);
-    }
+ //Addition and Subtraction
+ friend BigInt &operator+=(BigInt &, const BigInt &);
+ friend BigInt operator+(const BigInt &, const BigInt &);
+ friend BigInt operator-(const BigInt &, const BigInt &);
+ friend BigInt &operator-=(BigInt &, const BigInt &);
 
-    bool operator >=(Bigint &b) {
-        return (((*this)>b) || ((*this)==b));
-    }
+ //Comparison operators
+ friend bool operator==(const BigInt &, const BigInt &);
+ friend bool operator!=(const BigInt &, const BigInt &);
+ friend bool operator>(const BigInt &, const BigInt &);
+ friend bool operator>=(const BigInt &, const BigInt &);
+ friend bool operator<(const BigInt &, const BigInt &);
+ friend bool operator<=(const BigInt &, const BigInt &);
 
-    bool operator <(Bigint &b) {
-        return !((*this)>=b);
-    }
+ //Multiplication
+ friend BigInt &operator*=(BigInt &, const BigInt &);
+ friend BigInt operator*(const BigInt &, const BigInt &);
+ 
+ //Read and Write
+ friend ostream &operator<<(ostream &,const BigInt &);
+ friend istream &operator>>(istream &, BigInt &);
 
-    bool operator <=(Bigint &b) {
-        return !((*this)>b);
-    }
-
-
-    string trimZeros(string &s) {
-        int start = 0;
-        while (s[start]=='0') start++;
-        return s.substr(start);
-    }
-
-    string toString() {
-        string s(x, x+length);
-        reverse(s.begin(), s.end());
-        s = trimZeros(s);
-        if(s.length() == 0)
-            return "0";
-        return s;
-    }
-
-    friend std::ostream& operator<<(ostream &o, Bigint v) {
-        o << v.toString();
-        return o;
-    }
+ //Others
+ friend BigInt NthFibonacci(int n);
+ friend BigInt Factorial(int n);
 };
 
-int main() {
-    Bigint A("123456789"); // Construct Bigint using string representation
-    Bigint B(987654321); // Construct Bigint using integer representation
-    Bigint C("456789");
-    Bigint D("0");
-    cout << "A * B: " << A * B << endl; 
-    cout << "A * B + C: " << A * B + C << endl; // Chaining operations
-    cout << "(A > B): " << (A > B) << endl;
-    cout << "D: " << D << endl;
-    // logical operations
-    if (A > B) cout << "A is greater than B" << endl;
-    if (B > A) cout << "B is greater than A" << endl;
-    if (A == B) cout << "A is equal to B" << endl;
-    return 0;
+BigInt::BigInt(string & s){
+   digits = "";
+   int n = s.size();
+      for (int i = n - 1; i >= 0;i--){
+         if(!isdigit(s[i]))
+            throw("ERROR");
+            digits.push_back(s[i] - '0');
+      }
+}
+
+BigInt::BigInt(unsigned long long nr){
+ do{
+       digits.push_back(nr % 10);
+       nr /= 10;
+   }while (nr);
+}
+
+BigInt::BigInt(const char *s){
+     digits = "";
+       for (int i = strlen(s) - 1; i >= 0;i--)
+       {
+            if(!isdigit(s[i]))
+            throw("ERROR");
+            digits.push_back(s[i] - '0');
+       }
+}
+
+BigInt::BigInt(BigInt & a){
+       digits = a.digits;
+}
+
+bool Null(const BigInt& a){
+      if(a.digits.size() == 1 && a.digits[0] == 0)
+          return true;
+ return false;
+}
+
+int Length(const BigInt & a){
+     return a.digits.size();
+}
+
+bool operator==(const BigInt &a, const BigInt &b){
+     return a.digits == b.digits;
+}
+
+bool operator!=(const BigInt & a,const BigInt &b){
+     return !(a == b);
+}
+
+bool operator<(const BigInt&a,const BigInt&b){
+   int n = Length(a), m = Length(b);
+       if(n != m)
+          return n < m;
+       while(n--)
+         if(a.digits[n] != b.digits[n])
+            return a.digits[n] < b.digits[n];
+            return false;
+}
+
+bool operator>(const BigInt&a,const BigInt&b){
+       return b < a;
+}
+
+bool operator>=(const BigInt&a,const BigInt&b){
+       return !(a < b);
+}
+
+bool operator<=(const BigInt&a,const BigInt&b){
+       return !(a > b);
+}
+
+BigInt &BigInt::operator=(const BigInt &a){
+       digits = a.digits;
+       return *this;
+}
+
+BigInt &BigInt::operator++(){
+ int i, n = digits.size();
+ for (i = 0; i < n && digits[i] == 9;i++)
+  digits[i] = 0;
+ if(i == n)
+  digits.push_back(1);
+ else
+  digits[i]++;
+ return *this;
+}
+
+BigInt BigInt::operator++(int temp){
+ BigInt aux;
+ aux = *this;
+ ++(*this);
+ return aux;
+}
+
+BigInt &BigInt::operator--(){
+ if(digits[0] == 0 && digits.size() == 1)
+  throw("UNDERFLOW");
+ int i, n = digits.size();
+ for (i = 0; digits[i] == 0 && i < n;i++)
+  digits[i] = 9;
+ digits[i]--;
+ if(n > 1 && digits[n - 1] == 0)
+  digits.pop_back();
+ return *this;
+}
+
+BigInt BigInt::operator--(int temp){
+ BigInt aux;
+ aux = *this;
+ --(*this);
+ return aux;
+}
+
+BigInt &operator+=(BigInt &a,const BigInt& b){
+ int t = 0, s, i;
+ int n = Length(a), m = Length(b);
+ if(m > n)
+  a.digits.append(m - n, 0);
+ n = Length(a);
+ for (i = 0; i < n;i++){
+  if(i < m)
+   s = (a.digits[i] + b.digits[i]) + t;
+  else
+   s = a.digits[i] + t;
+  t = s / 10;
+  a.digits[i] = (s % 10);
+ }
+ if(t)
+  a.digits.push_back(t);
+ return a;
+}
+
+BigInt operator+(const BigInt &a, const BigInt &b){
+ BigInt temp;
+ temp = a;
+ temp += b;
+ return temp;
+}
+
+BigInt &operator-=(BigInt&a,const BigInt &b){
+ if(a < b)
+  throw("UNDERFLOW");
+ int n = Length(a), m = Length(b);
+ int i, t = 0, s;
+ for (i = 0; i < n;i++){
+  if(i < m)
+   s = a.digits[i] - b.digits[i]+ t;
+  else
+   s = a.digits[i]+ t;
+  if(s < 0)
+   s += 10,
+   t = -1;
+  else
+   t = 0;
+  a.digits[i] = s;
+ }
+ while(n > 1 && a.digits[n - 1] == 0)
+  a.digits.pop_back(),
+  n--;
+ return a;
+}
+BigInt operator-(const BigInt& a,const BigInt&b){
+ BigInt temp;
+ temp = a;
+ temp -= b;
+ return temp;
+}
+
+BigInt &operator*=(BigInt &a, const BigInt &b)
+{
+ if(Null(a) || Null(b)){
+  a = BigInt();
+  return a;
+ }
+ int n = a.digits.size(), m = b.digits.size();
+ vector<int> v(n + m, 0);
+ for (int i = 0; i < n;i++)
+  for (int j = 0; j < m;j++){
+   v[i + j] += (a.digits[i] ) * (b.digits[j]);
+  }
+ n += m;
+ a.digits.resize(v.size());
+ for (int s, i = 0, t = 0; i < n; i++)
+ {
+  s = t + v[i];
+  v[i] = s % 10;
+  t = s / 10;
+  a.digits[i] = v[i] ;
+ }
+ for (int i = n - 1; i >= 1 && !v[i];i--)
+   a.digits.pop_back();
+ return a;
+}
+
+BigInt operator*(const BigInt&a,const BigInt&b){
+ BigInt temp;
+ temp = a;
+ temp *= b;
+ return temp;
+}
+
+BigInt NthFibonacci(int n){
+ BigInt a(1), b(1), c;
+ if(!n)
+  return c;
+ n--;
+ while(n--){
+  c = a + b;
+  b = a;
+  a = c;
+ }
+ return b;
+}
+
+BigInt Factorial(int n){
+ BigInt f(1);
+ for (int i = 2; i <= n;i++)
+  f *= i;
+ return f;
+}
+
+istream &operator>>(istream &in,BigInt&a){
+ string s;
+ in >> s;
+ int n = s.size();
+ for (int i = n - 1; i >= 0;i--){
+  if(!isdigit(s[i]))
+   throw("INVALID NUMBER");
+  a.digits[n - i - 1] = s[i];
+ }
+ return in;
+}
+
+ostream &operator<<(ostream &out,const BigInt &a){
+ for (int i = a.digits.size() - 1; i >= 0;i--)
+  cout << (short)a.digits[i];
+ return cout;
+}
+
+//Driver code with some examples
+int main()
+{
+ BigInt first("12345");
+ BigInt second(123456789);
+ if (first == second) {
+  cout << "first and second are equal!"<<endl;
+ }
+ else
+  cout << "Not equal!"<<endl;
+ BigInt third("10000000000000");
+ BigInt fourth("100000");
+ if (third < fourth) {
+  cout << "third is smaller than fourth!\n";
+ }
+ BigInt fifth("10000000");
+ if (fifth > fourth) {
+  cout << "fifth is larger than fourth!\n";
+ }
+
+ // Printing all the numbers
+ cout << "first = " << first << '\n';
+ cout << "second = " << second << '\n';
+ cout << "third = " << third << '\n';
+ cout << "fourth = " << fourth<< '\n';
+ cout << "fifth = " << fifth<< '\n';
+
+ // Incrementing the value of first
+ first++;
+ cout << "After incrementing the"
+  << " value of first is : ";
+ cout << first << '\n';
+ BigInt sum;
+ sum = (fourth + fifth);
+ cout << "Sum of fourth and fifth = "
+  << sum << '\n';
+ BigInt product;
+ product = second * third;
+ cout << "Product of second and third = "
+  << product << '\n';
+
+ // Print the fibonaccii number from 1 to 100
+ cout << "----Fibonacci Number----"<<endl;
+ for (int i = 0; i <= 100; i++) {
+  BigInt Fib;
+  Fib = NthFibonacci(i);
+  cout << "Fibonacci " << i << " = " << Fib<<endl;
+ }
+ 
+ // Calculating factorial of from 1 to 100
+ cout << "----Factorial----"<<endl;
+ for (int i = 0; i <= 100; i++) {
+  BigInt fact;
+  fact = Factorial(i);
+  cout << "Factorial of "
+   << i << " = ";
+  cout << fact << '\n';
+ }
+ return 0;
 }
